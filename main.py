@@ -1,30 +1,23 @@
 import telebot
+from telebot import types
 import sqlite3
 import time
 
+# ⚠️ Sozlamalar
 TOKEN = "8650658473:AAEZ_A0VjLfxeRVELet0Q87ztZkOmr4Acfg"
-CHANNEL_ID = "@clipzXorg"  # Kanal useri
+CHANNEL_ID = "@clipzXorg" 
 CHANNEL_LINK = "https://t.me/clipzXorg"
-ADMINS = [8217118208, 8359977081] 
+ADMINS = [8217118208, 8359977081] # Bu yerga ikkinchi admin IDsini yozing
 
 bot = telebot.TeleBot(TOKEN)
 
 def is_subscribed(user_id):
-    """Obunani tekshirish (Bot kanal admini bo'lishi shart)"""
+    """Obunani tekshirish"""
     try:
         member = bot.get_chat_member(CHANNEL_ID, user_id)
-        # Statuslar: creator, administrator yoki member
-        if member.status in ['member', 'administrator', 'creator']:
-            return True
+        return member.status in ['member', 'administrator', 'creator']
+    except:
         return False
-    except Exception as e:
-        print(f"Xatolik: {e}")
-        return False
-
-# --- Xabar yuborish funksiyasi (Linkni yashirish uchun) ---
-def send_sub_message(chat_id):
-    text = f"❌ Botdan foydalanish uchun avval kanalimizga obuna bo'ling!\n\n👉 [Kanal]( {CHANNEL_LINK} )"
-    bot.send_message(chat_id, text, parse_mode='Markdown')
 
 def init_db():
     conn = sqlite3.connect('bazam.db')
@@ -35,10 +28,17 @@ def init_db():
 
 init_db()
 
+# Kanalga o'tish tugmasi
+def get_sub_markup():
+    markup = types.InlineKeyboardMarkup()
+    button = types.InlineKeyboardButton(text="Kanalga o'tish 📢", url=CHANNEL_LINK)
+    markup.add(button)
+    return markup
+
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     if not is_subscribed(message.from_user.id):
-        send_sub_message(message.chat.id)
+        bot.send_message(message.chat.id, "❌ Botdan foydalanish uchun kanalimizga obuna bo'ling!", reply_markup=get_sub_markup())
         return
     
     bot.reply_to(message, "👋 Assalomu alaykum! Kino kodini yuboring.")
@@ -64,7 +64,7 @@ def add_video(message):
 @bot.message_handler(content_types=['text'])
 def send_video(message):
     if not is_subscribed(message.from_user.id):
-        send_sub_message(message.chat.id)
+        bot.send_message(message.chat.id, "❌ Iltimos, kanalimizga obuna bo'ling:", reply_markup=get_sub_markup())
         return
 
     kod = message.text.strip()
@@ -81,4 +81,5 @@ def send_video(message):
     else:
         bot.reply_to(message, "❌ Video topilmadi.")
 
+print("Bot 2 ta admin va tugmali kanal tekshiruvi bilan ishga tushdi...")
 bot.infinity_polling()
