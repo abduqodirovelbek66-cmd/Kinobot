@@ -3,7 +3,7 @@ import telebot
 import time
 
 # ⚠️ Bot tokeningizni BotFather'dan olib, shu yerga yozing!
-TOKEN = "8625467620:AAEzi-YTOQjLWDrASPoQHnNt17UZiWEDqjI"
+TOKEN = "8625467620:AAG_1hFvi5Q5UcCR2jSE2msWD25BGrLkaL4"
 bot = telebot.TeleBot(TOKEN)
 
 # ⚠️ Sizning telegram ID raqamingiz (Faqat siz video yuklay olasiz)
