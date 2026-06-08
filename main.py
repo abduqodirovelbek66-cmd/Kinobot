@@ -9,7 +9,6 @@ ADMIN_ID = 8217118208
 def init_db():
     conn = sqlite3.connect("Kino_baza.db", check_same_thread=False)
     cursor = conn.cursor()
-    # Bazada endi matnni (nomini) ham saqlash uchun 'izoh' ustunini qo'shdik
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS videolar (
         kod TEXT PRIMARY KEY,
@@ -33,19 +32,22 @@ def send_welcome(message):
 def add_video(message):
     if message.from_user.id == ADMIN_ID:
         if message.caption:
-            # Birinchi so'zni kod qilib oladi (masalan: 01)
-            kod = message.caption.split()[0]       
+            # Matnni bo'shliqlar bo'yicha bo'laklarga ajratamiz
+            sozlar = message.caption.split()
+            kod = sozlar[0] # Birinchi so'z kod bo'ladi (masalan: 01)
+            
+            # Koddan keyingi qolgan barcha matnni kinoning nomi qilib olamiz
+            kino_nomi = message.caption.replace(kod, "", 1).strip()
+            
             file_id = message.video.file_id
-            # Butun boshli yozilgan matnni (nomini) to'liqligicha saqlaydi
-            izoh = message.caption                 
             
             conn = sqlite3.connect("Kino_baza.db", check_same_thread=False)
             cursor = conn.cursor()
-            cursor.execute("INSERT OR REPLACE INTO videolar (kod, file_id, izoh) VALUES (?, ?, ?)", (kod, file_id, izoh))
+            cursor.execute("INSERT OR REPLACE INTO videolar (kod, file_id, izoh) VALUES (?, ?, ?)", (kod, file_id, kino_nomi))
             conn.commit()
             conn.close()
             
-            bot.reply_to(message, f"✅ Video '{kod}' kodi va nomi bilan bazaga umrbod saqlandi!")
+            bot.reply_to(message, f"✅ Video '{kod}' kodi bilan saqlandi!\n🎬 Nomi: {kino_nomi}")
         else:
             bot.reply_to(message, "❌ Videoga izoh (kod va nom) yozish qolib ketdi!")
 
@@ -63,8 +65,9 @@ def send_video(message):
     
     if result:
         video_id = result[0]
-        video_izoh = result[1] # Saqlangan to'liq nomini oladi
-        # Foydalanuvchiga videoni o'z nomi (izohi) bilan qaytaradi
+        video_izoh = result[1] # Endi bu yerda faqat toza kino nomi turadi
+        
+        # Foydalanuvchiga videoni faqat o'z nomi bilan (kodisiz) jo'natadi
         bot.send_video(message.chat.id, video_id, caption=video_izoh)
     else:
         bot.reply_to(message, f"❌ '{kod}' kodli video topilmadi.")
