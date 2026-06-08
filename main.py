@@ -2,27 +2,30 @@ import telebot
 import sqlite3
 import time
 
-# ⚠️ Konfiguratsiya
 TOKEN = "8650658473:AAEZ_A0VjLfxeRVELet0Q87ztZkOmr4Acfg"
-# Kanalingiz useri (masalan: @clipzXorg)
-CHANNEL_ID = "@clipzXorg" 
-ADMINS = [8217118208, 8359977081] # IDlaringizni shu yerga yozing
+CHANNEL_ID = "@clipzXorg"  # Kanal useri
+CHANNEL_LINK = "https://t.me/clipzXorg"
+ADMINS = [8217118208, 8359977081] 
 
 bot = telebot.TeleBot(TOKEN)
 
 def is_subscribed(user_id):
-    """Foydalanuvchi kanalda borligini tekshirish"""
+    """Obunani tekshirish (Bot kanal admini bo'lishi shart)"""
     try:
-        # Bot kanalda admin bo'lishi shart!
         member = bot.get_chat_member(CHANNEL_ID, user_id)
-        # status: creator, administrator yoki member bo'lsa - obuna bo'lgan
+        # Statuslar: creator, administrator yoki member
         if member.status in ['member', 'administrator', 'creator']:
             return True
         return False
-    except:
+    except Exception as e:
+        print(f"Xatolik: {e}")
         return False
 
-# Baza yaratish funksiyasi
+# --- Xabar yuborish funksiyasi (Linkni yashirish uchun) ---
+def send_sub_message(chat_id):
+    text = f"❌ Botdan foydalanish uchun avval kanalimizga obuna bo'ling!\n\n👉 [Kanal]( {CHANNEL_LINK} )"
+    bot.send_message(chat_id, text, parse_mode='Markdown')
+
 def init_db():
     conn = sqlite3.connect('bazam.db')
     cursor = conn.cursor()
@@ -34,9 +37,8 @@ init_db()
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    # Kanalni tekshirish
     if not is_subscribed(message.from_user.id):
-        bot.reply_to(message, f"❌ Botdan foydalanish uchun kanalimizga obuna bo'ling: https://t.me/clipzXorg\n\nObuna bo'lgach /start buyrug'ini qayta bosing.")
+        send_sub_message(message.chat.id)
         return
     
     bot.reply_to(message, "👋 Assalomu alaykum! Kino kodini yuboring.")
@@ -55,15 +57,14 @@ def add_video(message):
             cursor.execute("INSERT INTO videolar (kod, file_id, izoh) VALUES (?, ?, ?)", (kod, file_id, kino_nomi))
             conn.commit()
             conn.close()
-            bot.reply_to(message, f"✅ Muvaffaqiyatli saqlandi!\n🔑 Kod: {kod}")
+            bot.reply_to(message, f"✅ Saqlandi: {kod}")
         else:
             bot.reply_to(message, "❌ Izoh yozish qolib ketdi!")
 
 @bot.message_handler(content_types=['text'])
 def send_video(message):
-    # Kanalni tekshirish
     if not is_subscribed(message.from_user.id):
-        bot.reply_to(message, f"❌ Iltimos, kanalimizga obuna bo'ling: https://t.me/clipzXorg")
+        send_sub_message(message.chat.id)
         return
 
     kod = message.text.strip()
@@ -80,5 +81,4 @@ def send_video(message):
     else:
         bot.reply_to(message, "❌ Video topilmadi.")
 
-print("Bot 2 ta admin va kanal tekshiruvi bilan ishga tushdi...")
 bot.infinity_polling()
