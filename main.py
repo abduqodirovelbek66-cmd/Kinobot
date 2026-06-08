@@ -1,16 +1,19 @@
 import telebot
 from telebot import types
-import sqlite3
-import time
 
 # ⚠️ Sozlamalar
 TOKEN = "8650658473:AAEZ_A0VjLfxeRVELet0Q87ztZkOmr4Acfg"
-CHANNEL_ID = "@clipzXorg" 
+CHANNEL_ID = -1003511706384 # Kanal ID'sini shu yerga yozing
 CHANNEL_LINK = "https://t.me/clipzXorg"
-# Adminlar ID ro'yxati (o'zingiz va sherigingiz ID raqamlarini yozing)
-ADMINS = [8217118208, 8359977081] 
+ADMINS = [8217118208, 8359977081] # O'z ID raqamingizni kiriting
 
 bot = telebot.TeleBot(TOKEN)
+
+# 🎬 KINO KODLARI (Bu yerda kod: xabar_id ko'rinishida saqlanadi)
+MOVIES = {
+    "1": 5,  # 1-kodli kino, kanalning 5-xabari
+    "2": 12  # 2-kodli kino, kanalning 12-xabari
+}
 
 def is_subscribed(user_id):
     """Obunani tekshirish"""
@@ -20,67 +23,52 @@ def is_subscribed(user_id):
     except:
         return False
 
-def init_db():
-    conn = sqlite3.connect('bazam.db')
-    cursor = conn.cursor()
-    cursor.execute("CREATE TABLE IF NOT EXISTS videolar (id INTEGER PRIMARY KEY AUTOINCREMENT, kod TEXT, file_id TEXT, izoh TEXT)")
-    conn.commit()
-    conn.close()
-
-init_db()
-
-# Kanalga o'tish tugmasi
 def get_sub_markup():
     markup = types.InlineKeyboardMarkup()
-    button = types.InlineKeyboardButton(text="Kanalga o'tish 📢", url=CHANNEL_LINK)
-    markup.add(button)
+    markup.add(types.InlineKeyboardButton(text="Kanalga o'tish 📢", url=CHANNEL_LINK))
     return markup
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    # Obunani tekshirish
     if is_subscribed(message.from_user.id):
-        bot.reply_to(message, "✅ Obuna tasdiqlandi! \n\n🎬 Endi menga kino kodini yuborishingiz mumkin.")
+        bot.reply_to(message, "✅ Obuna tasdiqlandi! \n\n🎬 Kino kodini yuboring.")
     else:
         bot.send_message(message.chat.id, "❌ Botdan foydalanish uchun kanalimizga obuna bo'ling!", reply_markup=get_sub_markup())
 
-@bot.message_handler(content_types=['video'])
-def add_video(message):
+@bot.message_handler(commands=['add'])
+def add_movie_command(message):
+    """Adminlar uchun kino qo'shish qoidasini ko'rsatish"""
     if message.from_user.id in ADMINS:
-        if message.caption:
-            lines = message.caption.split('\n')
-            kod = lines[0].strip()
-            kino_nomi = "\n".join(lines[1:]).strip() if len(lines) > 1 else ""
-            file_id = message.video.file_id
-            
-            conn = sqlite3.connect('bazam.db')
-            cursor = conn.cursor()
-            cursor.execute("INSERT INTO videolar (kod, file_id, izoh) VALUES (?, ?, ?)", (kod, file_id, kino_nomi))
-            conn.commit()
-            conn.close()
-            bot.reply_to(message, f"✅ Saqlandi!\n🔑 Kod: {kod}")
-        else:
-            bot.reply_to(message, "❌ Izoh yozish qolib ketdi!")
+        bot.reply_to(message, "Yangi kino qo'shish uchun kod va xabar ID sini quyidagicha yozing:\n/add_kod 123:45")
+
+@bot.message_handler(commands=['add_kod'])
+def add_movie(message):
+    """Kino kodini bazaga (MOVIES) qo'shish"""
+    if message.from_user.id in ADMINS:
+        try:
+            data = message.text.split()[1].split(':')
+            code, post_id = data[0], int(data[1])
+            MOVIES[code] = post_id
+            bot.reply_to(message, f"✅ Saqlandi! Kod: {code}, Xabar ID: {post_id}")
+        except:
+            bot.reply_to(message, "❌ Xatolik! Yozilish tartibi: /add_kod 1:123")
 
 @bot.message_handler(content_types=['text'])
 def send_video(message):
-    if not is_subscribed(message.from_user.id):
+    user_id = message.from_user.id
+    
+    if not is_subscribed(user_id):
         bot.send_message(message.chat.id, "❌ Iltimos, kanalimizga obuna bo'ling:", reply_markup=get_sub_markup())
         return
-
-    kod = message.text.strip()
-    conn = sqlite3.connect('bazam.db')
-    cursor = conn.cursor()
-    cursor.execute("SELECT file_id, izoh FROM videolar WHERE kod = ?", (kod,))
-    results = cursor.fetchall()
-    conn.close()
     
-    if results:
-        for row in results:
-            bot.send_video(message.chat.id, row[0], caption=row[1] if row[1] else "")
-            time.sleep(0.5)
+    kod = message.text.strip()
+    if kod in MOVIES:
+        try:
+            bot.copy_message(message.chat.id, CHANNEL_ID, MOVIES[kod])
+        except:
+            bot.reply_to(message, "❌ Video topilmadi yoki bot kanal admini emas.")
     else:
-        bot.reply_to(message, "❌ Video topilmadi.")
+        bot.reply_to(message, "❌ Bu kod bilan kino topilmadi.")
 
-print("Bot 2 ta admin va tasdiqlash funksiyasi bilan ishga tushdi...")
+print("Bot admin paneli bilan ishga tushdi...")
 bot.infinity_polling()
