@@ -7,7 +7,8 @@ import time
 TOKEN = "8650658473:AAEZ_A0VjLfxeRVELet0Q87ztZkOmr4Acfg"
 CHANNEL_ID = "@clipzXorg" 
 CHANNEL_LINK = "https://t.me/clipzXorg"
-ADMINS = [8217118208, 8359977081] # Bu yerga ikkinchi admin IDsini yozing
+# Adminlar ID ro'yxati (o'zingiz va sherigingiz ID raqamlarini yozing)
+ADMINS = [8217118208, 8359977081] 
 
 bot = telebot.TeleBot(TOKEN)
 
@@ -37,11 +38,11 @@ def get_sub_markup():
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    if not is_subscribed(message.from_user.id):
+    # Obunani tekshirish
+    if is_subscribed(message.from_user.id):
+        bot.reply_to(message, "✅ Obuna tasdiqlandi! \n\n🎬 Endi menga kino kodini yuborishingiz mumkin.")
+    else:
         bot.send_message(message.chat.id, "❌ Botdan foydalanish uchun kanalimizga obuna bo'ling!", reply_markup=get_sub_markup())
-        return
-    
-    bot.reply_to(message, "👋 Assalomu alaykum! Kino kodini yuboring.")
 
 @bot.message_handler(content_types=['video'])
 def add_video(message):
@@ -57,7 +58,7 @@ def add_video(message):
             cursor.execute("INSERT INTO videolar (kod, file_id, izoh) VALUES (?, ?, ?)", (kod, file_id, kino_nomi))
             conn.commit()
             conn.close()
-            bot.reply_to(message, f"✅ Saqlandi: {kod}")
+            bot.reply_to(message, f"✅ Saqlandi!\n🔑 Kod: {kod}")
         else:
             bot.reply_to(message, "❌ Izoh yozish qolib ketdi!")
 
@@ -81,5 +82,5 @@ def send_video(message):
     else:
         bot.reply_to(message, "❌ Video topilmadi.")
 
-print("Bot 2 ta admin va tugmali kanal tekshiruvi bilan ishga tushdi...")
+print("Bot 2 ta admin va tasdiqlash funksiyasi bilan ishga tushdi...")
 bot.infinity_polling()
