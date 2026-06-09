@@ -4,7 +4,7 @@ import time
 
 # ⚠️ Sozlamalar
 TOKEN = "8650658473:AAEZ_A0VjLfxeRVELet0Q87ztZkOmr4Acfg"
-CHANNEL_ID = -1003511706384 
+CHANNEL_ID =-1003511706384
 CHANNEL_LINK = "https://t.me/clipzXorg"
 
 bot = telebot.TeleBot(TOKEN)
