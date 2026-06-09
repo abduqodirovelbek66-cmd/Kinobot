@@ -1,7 +1,7 @@
 import telebot
 
 TOKEN = "8650658473:AAEZ_A0VjLfxeRVELet0Q87ztZkOmr4Acfg"
-CHANNEL = "@your_channel"
+CHANNEL = "https://t.me/clipzXorg"
 
 bot = telebot.TeleBot(TOKEN)
 
