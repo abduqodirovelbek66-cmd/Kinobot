@@ -8,35 +8,35 @@ CHANNEL_LINK = "https://t.me/clipzXorg"
 
 bot = telebot.TeleBot(TOKEN)
 
-# Kino kodlari
 MOVIES = {
-    "1": [9, 10, 11, 12, 13, 14, 15],
-    "2": [16],
+    "1": [9, 11, 12, 13, 14, 15],
+    "2": [15],
     "3": [40, 41, 42]
 }
 
-# --- OBUNA TEKSHIRISH (Qat'iy rejim) ---
+# --- Obunani tekshirish (To'g'rilangan) ---
 def is_subscribed(user_id):
     try:
         member = bot.get_chat_member(CHANNEL_ID, user_id)
-        # Agar status 'left' yoki 'kicked' bo'lsa, obuna bo'lmagan
+        # Agar status ushbu ro'yxatda bo'lsa, demak obuna bo'lgan
         if member.status in ["member", "administrator", "creator"]:
             return True
-        return False
+        else:
+            return False
     except:
-        # Agar bot admin bo'lmasa yoki xatolik bo'lsa, False qaytaradi
+        # Agar bot kanal admini bo'lmasa, bu xato beradi va False qaytaradi
         return False
 
-# --- BUTTON ---
+# --- Tugmalar ---
 def join_button():
     markup = types.InlineKeyboardMarkup()
     markup.add(
-        types.InlineKeyboardButton("📢 KANALGA OBUNA BO'LISH", url=CHANNEL_LINK),
+        types.InlineKeyboardButton("📢 KANAL", url=CHANNEL_LINK),
         types.InlineKeyboardButton("✅ TEKSHIRISH", callback_data="check")
     )
     return markup
 
-# --- START ---
+# --- START Buyrug'i ---
 @bot.message_handler(commands=['start'])
 def start(message):
     if is_subscribed(message.from_user.id):
@@ -44,11 +44,11 @@ def start(message):
     else:
         bot.send_message(
             message.chat.id,
-            "👋 Xush kelibsiz!\n\n❌ Botdan foydalanish uchun avval kanalga obuna bo'ling.",
+            "👋 Xush kelibsiz!\n\n📢 Kino botdan foydalanish uchun kanalga obuna bo‘ling.",
             reply_markup=join_button()
         )
 
-# --- CHECK BUTTON ---
+# --- Tekshirish tugmasi ---
 @bot.callback_query_handler(func=lambda call: call.data == "check")
 def check(call):
     if is_subscribed(call.from_user.id):
@@ -60,24 +60,24 @@ def check(call):
     else:
         bot.answer_callback_query(call.id, "❌ Siz hali obuna bo‘lmagansiz!", show_alert=True)
 
-# --- KINO KOD ---
+# --- Kino yuborish ---
 @bot.message_handler(content_types=['text'])
 def movie(message):
     user_id = message.from_user.id
     code = message.text.strip()
 
-    # Agar obuna bo'lmasa, kino yubormaydi
+    # Agar obuna bo'lmasa, har doim tekshirib qaytaradi
     if not is_subscribed(user_id):
         bot.send_message(
             message.chat.id,
-            "❌ Obuna bo'lmaganingiz uchun kino topilmadi. Avval kanalga obuna bo'ling:",
+            "❌ Botdan foydalanish uchun kanalga obuna bo‘ling:",
             reply_markup=join_button()
         )
         return
 
-    # KINO BOR BO'LSA
+    # Agar obuna bo'lsa, kino yuboradi
     if code in MOVIES:
-        bot.send_message(message.chat.id, f"🎬 '{code}' kodli kino qismlari yuborilmoqda...")
+        bot.send_message(message.chat.id, f"🎬 '{code}' kodli kino yuborilmoqda...")
         for post_id in MOVIES[code]:
             try:
                 bot.copy_message(message.chat.id, CHANNEL_ID, post_id)
@@ -85,7 +85,7 @@ def movie(message):
             except:
                 continue
     else:
-        bot.send_message(message.chat.id, "❌ Bunday kodli kino topilmadi.")
+        bot.send_message(message.chat.id, "❌ Kino kodi topilmadi.")
 
 print("Bot ishlayapti...")
 bot.infinity_polling()
