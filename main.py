@@ -7,7 +7,7 @@ bot = telebot.TeleBot(TOKEN)
 
 # Kino bazasi
 movies = {
-    "1001": "🎬 Kino nomi: Ovchi Itlar 2 -FASL Barcha qisim\n📥 Link:https://t.me/c/3511706384/9 https://t.me/c/3511706384/10 https://t.me/c/3511706384/11 https://t.me/c/3511706384/12 https://t.me/c/3511706384/13 https://t.me/c/3511706384/14 https://t.me/c/3511706384/15",
+    "1001": "🎬 Kino nomi: Ovchi Itlar 2 -FASL Barcha qisim\n📥 Link:https://t.me/c/3511706384/9",
     "1002": "🎬 Kino nomi: Interstellar\n📥 Link: https://example.com/movie2",
     "1003": "🎬 Kino nomi: Avengers\n📥 Link: https://example.com/movie3"
 }
