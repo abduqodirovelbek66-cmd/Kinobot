@@ -24,7 +24,7 @@ def is_subscribed(user_id):
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    bot.reply_to(message, "Assalomu alaykum! Kino kodini yuboring (masalan: 1).")
+    bot.reply_to(message, "Assalomu alaykum! Kino kodini yuboring.")
 
 @bot.message_handler(content_types=['text'])
 def send_video(message):
