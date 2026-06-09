@@ -4,67 +4,55 @@ import time
 
 # ⚠️ Sozlamalar
 TOKEN = "8650658473:AAEZ_A0VjLfxeRVELet0Q87ztZkOmr4Acfg"
-CHANNEL_ID =-1003511706384
+CHANNEL_ID = -1003511706384
 CHANNEL_LINK = "https://t.me/clipzXorg"
 
 bot = telebot.TeleBot(TOKEN)
 
+# Kino qismlari (Kanalidagi post ID'larini shu yerga yozing)
+# Bot har safar kanalni skanerlamasligi uchun bu eng ishonchli usul
+MOVIES = {
+    "1": [5, 6, 7, 8, 9],    
+    "11": [12, 13, 14],     
+    "2": [20, 21]           
+}
+
 def is_subscribed(user_id):
     try:
         member = bot.get_chat_member(CHANNEL_ID, user_id)
+        # Faqat kanalga obuna bo'lgan bo'lsa True qaytaradi
         return member.status in ['member', 'administrator', 'creator']
     except:
         return False
 
-def get_sub_markup():
-    markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton(text="Kanalga o‘tish 📢", url=CHANNEL_LINK))
-    return markup
-
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    bot.reply_to(message, "Kino kodini yuboring (masalan: 1, 11).")
+    bot.reply_to(message, "Assalomu alaykum! Kino kodini yuboring.")
 
 @bot.message_handler(content_types=['text'])
 def send_video(message):
-    # 1. Obunani tekshirish
-    if not is_subscribed(message.from_user.id):
-        bot.send_message(message.chat.id, "❌ Botdan foydalanish uchun kanalimizga obuna bo‘ling!", reply_markup=get_sub_markup())
+    user_id = message.from_user.id
+    kod = message.text.strip()
+
+    # 1. Obuna tekshiruvi
+    if not is_subscribed(user_id):
+        markup = types.InlineKeyboardMarkup()
+        markup.add(types.InlineKeyboardButton(text="Kanalga obuna bo'lish 📢", url=CHANNEL_LINK))
+        bot.send_message(message.chat.id, "❌ Botdan foydalanish uchun kanalimizga obuna bo'ling!", reply_markup=markup)
         return
 
-    kod = message.text.strip()
-    bot.reply_to(message, f"🔍 '{kod}' kodli kinoni qidirmoqdaman, kuting...")
-
-    # 2. Kanalni qidirish (Bu qismda kanal katta bo'lsa, xatolik berishi mumkin)
-    # Eslatma: Bot kanalga admin bo'lishi shart!
-    found = False
-    
-    # Kanal tarixini olish
-    # (Diqqat: get_chat_history har doim ham kanal tarixini to'liq bermaydi, 
-    # shuning uchun bazadan foydalanish tavsiya etiladi)
-    try:
-        # Kanal tarixini tekshirish (oxirgi 100 ta xabar)
-        messages = bot.get_chat_history(CHANNEL_ID, limit=100)
-        
-        # Kodni o'z ichiga olgan xabarlarni yig'ish
-        parts = []
-        for msg in messages:
-            if msg.caption and kod in msg.caption:
-                parts.append(msg)
-        
-        # Xabarlarni xabar ID'si bo'yicha tartiblash (ketma-ket chiqishi uchun)
-        parts.sort(key=lambda x: x.message_id)
-
-        if parts:
-            for part in parts:
-                bot.copy_message(message.chat.id, CHANNEL_ID, part.message_id)
-                time.sleep(0.5)
-            found = True
-        else:
-            bot.send_message(message.chat.id, "❌ Bunday kodli kino topilmadi.")
-            
-    except Exception as e:
-        bot.send_message(message.chat.id, f"❌ Xatolik yuz berdi: {e}")
+    # 2. Kinoni yuborish
+    if kod in MOVIES:
+        bot.reply_to(message, f"✅ '{kod}' kodli kino yuborilmoqda...")
+        for post_id in MOVIES[kod]:
+            try:
+                bot.copy_message(message.chat.id, CHANNEL_ID, post_id)
+                time.sleep(0.5) 
+            except Exception as e:
+                print(f"Xatolik: {e}")
+                continue
+    else:
+        bot.reply_to(message, "❌ Bunday kino topilmadi.")
 
 print("Bot ishga tushdi...")
 bot.infinity_polling()
