@@ -1,60 +1,91 @@
 import telebot
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+from telebot import types
 
 TOKEN = "8650658473:AAEZ_A0VjLfxeRVELet0Q87ztZkOmr4Acfg"
-CHANNEL = "@clipzXorg"
+CHANNEL_ID = -1003511706384
+CHANNEL_LINK = "https://t.me/clipzXorg"
 
 bot = telebot.TeleBot(TOKEN)
 
-# Kino bazasi
-movies = {
-    "1001": "🎬 Kino nomi: Ovchi itlar 2-FASL Barcha qisimlar\n📥 Link: https://t.me/c/3511706384/9",
-    "1002": "🎬 Kino nomi: Interstellar\n📥 Link: https://example.com/movie2",
-    "1003": "🎬 Kino nomi: Avengers\n📥 Link: https://example.com/movie3"
+# Kino kodlari -> kanal post ID lar
+MOVIES = {
+    "1": [9, 10, 11, 12, 13, 14, 15],
+    "2": [16],
+    "3": [40, 41, 42]
 }
 
-def channel_button():
-    markup = InlineKeyboardMarkup()
-    btn = InlineKeyboardButton(
-        "📢 KANAL",
-        url="https://t.me/clipzXorg"
-    )
-    markup.add(btn)
-    return markup
-
-def check_sub(user_id):
+# OBUNA TEKSHIRISH
+def is_subscribed(user_id):
     try:
-        member = bot.get_chat_member(CHANNEL, user_id)
+        member = bot.get_chat_member(CHANNEL_ID, user_id)
         return member.status in ["member", "administrator", "creator"]
     except:
         return False
 
+
+# BUTTONLAR
+def join_button():
+    markup = types.InlineKeyboardMarkup()
+    markup.add(
+        types.InlineKeyboardButton("📢 KANAL", url=CHANNEL_LINK),
+        types.InlineKeyboardButton("✅ TEKSHIRISH", callback_data="check")
+    )
+    return markup
+
+
+# START
 @bot.message_handler(commands=['start'])
 def start(message):
     bot.send_message(
         message.chat.id,
-        "👋 Botimizga xush kelibsiz!\n\n📢 Kanalga obuna bo'ling 😊",
-        reply_markup=channel_button()
+        "👋 Xush kelibsiz!\n\n📢 Kino botdan foydalanish uchun kanalga obuna bo‘ling.",
+        reply_markup=join_button()
     )
 
-@bot.message_handler(func=lambda message: True)
-def get_movie(message):
-    user_id = message.from_user.id
 
-    if not check_sub(user_id):
-        bot.reply_to(
-            message,
-            "📢 Kanalga obuna bo'ling 😊",
-            reply_markup=channel_button()
+# CHECK BUTTON
+@bot.callback_query_handler(func=lambda call: call.data == "check")
+def check(call):
+
+    if is_subscribed(call.from_user.id):
+        bot.edit_message_text(
+            "✅ Obuna tasdiqlandi!\n🎬 Endi kino kodini yuboring.",
+            call.message.chat.id,
+            call.message.message_id
+        )
+    else:
+        bot.answer_callback_query(call.id, "❌ Siz hali obuna bo‘lmagansiz!")
+
+
+# KINO KOD
+@bot.message_handler(content_types=['text'])
+def movie(message):
+
+    user_id = message.from_user.id
+    code = message.text.strip()
+
+    # OBUNA YO'Q BO'LSA
+    if not is_subscribed(user_id):
+        bot.send_message(
+            message.chat.id,
+            "❌ Avval kanalga obuna bo‘ling!",
+            reply_markup=join_button()
         )
         return
 
-    code = message.text.strip()
+    # KINO BOR BO'LSA
+    if code in MOVIES:
+        bot.send_message(message.chat.id, f"🎬 '{code}' kodli kino yuborilmoqda...")
 
-    if code in movies:
-        bot.reply_to(message, movies[code])
+        for post_id in MOVIES[code]:
+            try:
+                bot.copy_message(message.chat.id, CHANNEL_ID, post_id)
+            except:
+                pass
+
     else:
-        bot.reply_to(message, "Kino kodi xato 🚫")
+        bot.send_message(message.chat.id, "❌ Kino kodi topilmadi")
+
 
 print("Bot ishlayapti...")
 bot.infinity_polling()
